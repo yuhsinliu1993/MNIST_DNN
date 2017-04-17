@@ -1,0 +1,9 @@
+img_size: 784
+
+n_classes: 10
+
+batch_size: 100
+
+training_epochs: 60
+
+display_step: 1
