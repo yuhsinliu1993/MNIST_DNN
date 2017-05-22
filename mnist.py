@@ -78,7 +78,8 @@ def calculate_accuracy(logits, y_true):
             tf.argmax(logits, 1), tf.argmax(y_true, 1))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
         accuracy_summary = tf.summary.scalar('accuracy', accuracy)
-    return accuracy, accuracy_summary
+
+        return accuracy, accuracy_summary
 
 
 def build_dnn_model(x, fc_neuron_layers, reg, keep_prob, reg_constant):
@@ -182,27 +183,22 @@ def run(**kwargs):
 
     # Placeholders
     x = tf.placeholder(tf.float32, shape=[None, configs['img_size']], name='x')
-    y_true = tf.placeholder(
-        tf.float32, shape=[None, configs['n_classes']], name='y_true')
+    y_true = tf.placeholder(tf.float32, shape=[None, configs['n_classes']], name='y_true')
     keep_prob = tf.placeholder(tf.float32)
 
     # Build Model
     fc_neuron_layers = kwargs['layers']
-    model, weights_summary = build_dnn_model(x, fc_neuron_layers=fc_neuron_layers, reg=kwargs[
-                                             'regularization'], keep_prob=keep_prob, reg_constant=kwargs['alpha'])
+    model, weights_summary = build_dnn_model(x, fc_neuron_layers=fc_neuron_layers, reg=kwargs['regularization'], keep_prob=keep_prob, reg_constant=kwargs['alpha'])
 
     pred = tf.nn.softmax(logits=model[len(fc_neuron_layers) - 1])
 
-    accuracy, accuracy_summary = calculate_accuracy(
-        model[len(fc_neuron_layers) - 1], y_true)
-    loss, loss_summary = loss_function(
-        logits=model[len(fc_neuron_layers) - 1], labels=y_true, using_reg=using_reg)
+    accuracy, accuracy_summary = calculate_accuracy(model[len(fc_neuron_layers) - 1], y_true)
+    loss, loss_summary = loss_function(logits=model[len(fc_neuron_layers) - 1], labels=y_true, using_reg=using_reg)
 
-    optimizer = training(
-        loss, kwargs['lr'], kwargs['optimization'])
+    optimizer = training(loss, kwargs['lr'], kwargs['optimization'])
 
-    merged_LW = tf.summary.merge(
-        [weights_summary[i]for i in range(len(fc_neuron_layers))] + [loss_summary])
+    merged_LW = tf.summary.merge([weights_summary[i]for i in range(len(fc_neuron_layers))] + [loss_summary])
+
     # merged_L = tf.summary.merge([loss_summary])
     merged_A = tf.summary.merge([accuracy_summary])
 
@@ -219,6 +215,7 @@ def run(**kwargs):
 
     log_path, train_log_path, val_log_path = create_log_folders(folder_name)
 
+    total_batch = int(data.train.num_examples / configs['batch_size'])
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
 
@@ -229,7 +226,6 @@ def run(**kwargs):
 
         for epoch in range(configs['training_epochs']):
             avg_loss = 0
-            total_batch = int(data.train.num_examples / configs['batch_size'])
 
             for i in range(total_batch):
                 x_train, y_train = data.train.next_batch(configs['batch_size'])
